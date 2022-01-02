@@ -7,6 +7,7 @@ const {
   deleteUser,
   updateMe,
   deleteMe,
+  getMe,
 } = require("../controllers/userController");
 
 const {
@@ -16,6 +17,7 @@ const {
   resetPassword,
   updatePassword,
   isAuthenticated,
+  restrictTo,
 } = require("../controllers/authController");
 
 const router = express.Router();
@@ -24,13 +26,19 @@ router.post("/signup", signup);
 router.post("/signin", signin);
 router.post("/forgotPassword", forgotPassword);
 router.patch("/resetPassword/:token", resetPassword);
-router.patch("/updatePassword", isAuthenticated, updatePassword);
 
-router.patch("/updateMe", isAuthenticated, updateMe);
-router.delete("/deleteMe", isAuthenticated, deleteMe);
+// from below route onwards authentication is required
+router.use(isAuthenticated);
+
+router.patch("/updatePassword", updatePassword);
+router.patch("/updateMe", updateMe);
+router.delete("/deleteMe", deleteMe);
+router.get("/me", getMe, getUser);
+
+// from below route onwards only admin can access
+router.use(restrictTo('admin'));
 
 router.route("/").get(getAllUsers).post(createUser);
-
 router.route("/:id").get(getUser).patch(updateUser).delete(deleteUser);
 
 module.exports = router;
