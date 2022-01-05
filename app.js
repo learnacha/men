@@ -1,19 +1,25 @@
-const express = require("express");
-const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
-const helmet = require("helmet");
-const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss-clean");
-const hpp = require("hpp");
+const path = require('path');
+const express = require('express');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
 
-const tourRouter = require("./routes/tourRoutes");
-const userRouter = require("./routes/userRoutes");
-const reviewRouter = require("./routes/reviewRoutes");
+const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/userRoutes');
+const reviewRouter = require('./routes/reviewRoutes');
 
-const AppError = require("./utils/appError");
-const erroHandler = require("./controllers/errorController");
+const AppError = require('./utils/appError');
+const erroHandler = require('./controllers/errorController');
 
 const app = express();
+
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Global middleware
 // security http headers
@@ -23,14 +29,14 @@ app.use(helmet());
 const limiter = rateLimit({
   max: 100,
   windowMs: 60 * 60 * 1000,
-  message: "Too many requests from this IP, please try again in an hour",
+  message: 'Too many requests from this IP, please try again in an hour',
 });
 
-app.use("/api", limiter);
+app.use('/api', limiter);
 
 // logging for development
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
 }
 app.use((req, res, next) => {
   // console.log(req.headers);
@@ -40,7 +46,7 @@ app.use((req, res, next) => {
 // body parser, reading data from body into rq.body
 app.use(
   express.json({
-    limit: "10kb",
+    limit: '10kb',
   })
 );
 
@@ -55,24 +61,31 @@ app.use(xss());
 app.use(
   hpp({
     whitelist: [
-      "duration",
-      "ratingsQuantity",
-      "ratingsAverage",
-      "maxGroupSize",
-      "difficulty",
-      "price",
+      'duration',
+      'ratingsQuantity',
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price',
     ],
   })
 );
 
 // serving static files
-app.use(express.static(`${__dirname}/public`));
+path.join(__dirname, 'views');
 
-app.use("/api/v1/tours", tourRouter);
-app.use("/api/v1/users", userRouter);
-app.use("/api/v1/reviews", reviewRouter);
+app.get('/', (req, res) => {
+  res.status(200).render('base', {
+    tour: 'The Forest Hiker',
+    user: 'Sri Hari Acha',
+  });
+});
 
-app.all("*", (req, res, next) => {
+app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
+
+app.all('*', (req, res, next) => {
   const errorMessage = `Cant find ${req.originalUrl} on this server!`;
   const statusCode = 404;
 
